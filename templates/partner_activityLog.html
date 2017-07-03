@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>Customer Subscription Activity Logs</title>
+</head>
+<body>
+    <h1>Customer Subscription Activity Logs</h1>
+    <form action="{{url_for('partner_subscriptions')}}" method="GET">
+        <p><input type="submit" value="Back to Customer Subscriptions" style="width:400px" /></p>
+    </form>
+    <br />
+    <h3>Using App Only Access Token</h3>
+    <p>{{access_token}}</p>
+    <h3>Activity Log</h3>
+    {% for log in activity_log %}
+    <p>{{log.eventName['localizedValue']}} : {{log.eventDataId}} - {{log.status['localizedValue']}}</p>
+    {% endfor %}
+</body>
+</html>

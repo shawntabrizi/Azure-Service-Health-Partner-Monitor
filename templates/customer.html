@@ -1,0 +1,21 @@
+<html>
+<head>
+    <title>Customer Portal</title>
+</head>
+<body>
+    <h1>Customer Portal</h1>
+    <br />
+    <form action="{{url_for('customer_subscriptions')}}" method="GET">
+        <p><input type="submit" value="Subscriptions" style="width:400px" /></p>
+    </form>
+    <form action="{{url_for('logout')}}" method="POST">
+        <p><input type="submit" value="Logout" style="width:400px" /></p>
+    </form>
+    <br />
+    <h4>ARM Token</h4>
+    <p>{{ token_arm }}</p>
+    <br />
+    <h4>Graph Token</h4>
+    <p>{{ token_graph }}</p>
+</body>
+</html>

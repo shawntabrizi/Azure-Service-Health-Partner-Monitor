@@ -1,0 +1,14 @@
+<html>
+<head>
+    <title>Grant Access Result</title>
+</head>
+<body>
+    <h1>Grant Access Result</h1>
+    <form action="{{url_for('customer_subscriptions')}}" method="GET">
+        <p><input type="submit" value="Back to Subscriptions" style="width:400px" /></p>
+    </form>
+    <br />
+    <h3>Result</h3>
+    <p>{{ result }}</p>
+</body>
+</html>

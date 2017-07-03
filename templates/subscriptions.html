@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>Customer Subscriptions</title>
+</head>
+<body>
+    <h1>Customer Subscriptions</h1>
+    <br />
+    <form action="{{url_for('customer')}}" method="GET">
+        <p><input type="submit" value="Home" style="width:400px" /></p>
+    </form>
+    <br />
+    <h3>Pick a Subscription to View Activity Log</h3>
+    {% for subscription in subscriptions %}
+    <p>{{subscription.displayName}} : <a href="{{url_for('customer_activityLog', subscription_id=subscription.subscriptionId)}}">{{subscription.subscriptionId}}</a></p>
+    {% endfor %}
+
+</body>
+</html>
