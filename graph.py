@@ -1,6 +1,6 @@
 from authentication import create_headers
 import requests
-import appconfig as g
+import appconfigreal as g
 
 def get_service_principal_object_id(access_token):
     headers = create_headers(access_token)

@@ -1,6 +1,6 @@
 from authentication import create_headers
 import requests
-import appconfig as g
+import appconfigreal as g
 import uuid
 
 def get_subscriptions(access_token):
@@ -23,7 +23,7 @@ def get_activity_log(access_token, subscription_id):
         'url': g.resource_arm,
         'subscription_id': subscription_id,
         'api_version': "2015-04-01",
-        'filter': "eventTimestamp ge '2017-6-1T00:00:37Z'", #not in url
+        'filter': "eventTimestamp ge '2017-6-1T00:00:37Z'",
         'select': 'eventName,eventDataId,status'
         }
 
@@ -33,8 +33,6 @@ def get_activity_log(access_token, subscription_id):
 
 def add_service_principal_to_role(access_token, subscription_id, spoid):
     headers = create_headers(access_token)
-
-    
 
     params = {
         'url': g.resource_arm,
@@ -54,5 +52,4 @@ def add_service_principal_to_role(access_token, subscription_id, spoid):
     create_role_assignments_url = '%(url)s/subscriptions/%(subscription_id)s/providers/Microsoft.Authorization/roleAssignments/%(role_assignment_name)s?api-version=%(api_version)s' %params
 
     r = requests.put(create_role_assignments_url, headers=headers, json=data)
-    
     return r
