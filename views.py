@@ -57,32 +57,38 @@ def authorized(user_type):
     # Return user to their appropriate landing page
     return redirect(url_for(user_type)) 
 
-# Customer Landing Page
+### Start of Customer Pages
+# Customer Landing Page. Shows the user their raw access tokens
 @app.route('/customer')
 def customer():
     token_arm = session['access_token_arm']
     token_graph = session['access_token_graph']
     return render_template('customer.html', token_arm=str(token_arm), token_graph=str(token_graph))
 
+# Customer Subscription Page. Shows the user their Azure Subscriptions
 @app.route('/customer/subscriptions')
 def customer_subscriptions():
     subscriptions = get_subscriptions(session['access_token_arm'])
     return render_template('subscriptions.html', subscriptions=subscriptions['value'])
 
+# Customer Activity Log Page. Shows the user the Azure Health Activity Log for the subscription they picked.
 @app.route('/customer/subscriptions/<string:subscription_id>/activityLog')
 def customer_activityLog(subscription_id):
     activity_log = get_activity_log(session['access_token_arm'],subscription_id)
     return render_template('activityLog.html', activity_log=activity_log['value'], subscription_id=subscription_id)
 
+# Grant Access Page. Allows the user to grant the application access to read their subscription even when the user is not currently logged in.
 @app.route('/customer/subscriptions/<string:subscription_id>/activityLog/grantAccess')
 def grantAccess(subscription_id):
+    # Use the AAD Graph API to get: Service Principal Object Id, Tenant Display Name, Tenant Id, and Username of the signed in user.
     spoid = get_service_principal_object_id(session['access_token_graph'])
     tenant_displayname, tenant_id = get_tenant_details(session['access_token_graph'])
     username = get_user_details(session['access_token_graph'])
 
+    # Try to add Service Principal to ARM Reader Role
     result = add_service_principal_to_role(session['access_token_arm'],subscription_id,spoid)
     
-    #add to DB if Success (201) or RoleAssigmentExists (409)
+    # Add Subscription and Tenant information to DB if Success (201) or if Role Assigment Already Exists (409)
     if result.status_code == 201 or result.status_code == 409:
         db = TinyDB('.\db.json')
         q = Query()
@@ -92,7 +98,7 @@ def grantAccess(subscription_id):
             'tenantDisplayName': tenant_displayname,
             'username': username,
             }
-        #add row in DB if subscription does not already exist
+        # Add information to DB if the information is new. We are assuming Subscription ID is globally unique.
         if(not db.search(q.subscriptionId == subscription_id)):
             db.insert(db_row)
             message = "Subscription Added to Partner Database!"
@@ -103,24 +109,33 @@ def grantAccess(subscription_id):
 
     return render_template('grantaccess.html', result=result.json(), message=message)
 
+### End of Customer Pages
 
+### Start of Partner Pages
+# These pages could be modified to check that only "Partners" have access.
+# Add a AAD Graph API query to check "Tenant ID" or "Username" to see if it matches what you expect.
+
+# Partner Landing Page. Shows the user their raw access tokens
 @app.route('/partner')
 def partner():
     token_arm = session['access_token_arm']
     token_graph = session['access_token_graph']
     return render_template('partner.html', token_arm=str(token_arm), token_graph=str(token_graph))
 
+# List Customer Subscriptions Page. This page shows the partner all the customers that have granted access to their subscription.
 @app.route('/partner/subscriptions')
 def partner_subscriptions():
     db = TinyDB('.\db.json')
     subscriptions = db.all()
     return render_template('partner_subscriptions.html', subscriptions=subscriptions)
 
+# Activity Log Page. This page shows the partner the activity log of the subscription, using an App Only Token.
 @app.route('/partner/<string:subscription_id>/activityLog')
 def partner_activityLog(subscription_id):
     db = TinyDB('.\db.json')
     q = Query()
     subscription = db.get(q.subscriptionId == subscription_id)
+    # Get an App Only Token for the specific Tenant where the subscription lives.
     session['access_token_app'] = get_access_token_app(g.resource_arm, subscription['tenantId'])
     activity_log = get_activity_log(session['access_token_app'], subscription_id)
     return render_template('partner_activityLog.html', activity_log=activity_log['value'], access_token=session['access_token_app'])
