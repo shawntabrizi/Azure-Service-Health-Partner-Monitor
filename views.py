@@ -89,7 +89,7 @@ def grantAccess(subscription_id):
     result = add_service_principal_to_role(session['access_token_arm'],subscription_id,spoid)
     
     # Add Subscription and Tenant information to DB if Success (201) or if Role Assigment Already Exists (409)
-    if result.status_code == 201 or result.status_code == 409:
+    if result.status_code == 201 or (result.status_code == 409 and result.json()['error']['code'] == 'RoleAssignmentExists'):
         db = TinyDB('.\db.json')
         q = Query()
         db_row = {
