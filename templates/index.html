@@ -8,8 +8,9 @@
     <form action="http://localhost:5000/customer/login" method="POST">
         <p><input type="submit" value="Customer Login" style="width:400px" /></p>
     </form>
-    <form action="http://localhost:5000/partner/login" method="POST">
-        <p><input type="submit" value="Partner Login" style="width:400px" /></p>
+    <!-- if you want the partner to login to check their credentials, have this button point to /partner/login with method="POST"-->
+    <form action="http://localhost:5000/partner/subscriptions" method="GET">
+        <p><input type="submit" value="Partner Access" style="width:400px" /></p>
     </form>
 </body>
 </html>

@@ -1,0 +1,17 @@
+<html>
+<head>
+    <title>Error</title>
+</head>
+<body>
+    <h1>Error</h1>
+    <br />
+    <h1>This application ran into an error.</h1>
+    <p>You may just need to Log Out and Log In again.</p>
+    <p>If this is a bug in the code, please report it on <a href="https://github.com/shawntabrizi/Azure-Health-Partner-Monitor">GitHub</a></p>
+    <h3>Error Message:</h3>
+    <p>{{error}}</p>
+    <form action="{{url_for('logout')}}" method="POST">
+        <p><input type="submit" value="Logout" style="width:400px" /></p>
+    </form>
+</body>
+</html>

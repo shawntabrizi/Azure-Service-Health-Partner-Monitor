@@ -9,8 +9,10 @@ from arm import *
 from graph import *
 from authentication import *
 
+global_credentials = None
+
 app = Flask(__name__)
-app.debug = True
+#app.debug = True
 app.secret_key = g.flaskSecret
 
 # Home Page, with different Login Buttons for Customer or Partner
@@ -53,6 +55,9 @@ def authorized(user_type):
     redirect_uri = url_for('authorized', user_type=user_type, _external=True)
     session['access_token_arm'] = get_access_token_code(code, redirect_uri, g.resource_arm)
     session['access_token_graph'] = get_access_token_code(code, redirect_uri, g.resource_graph)
+    global global_credentials
+    global_credentials = get_user_credentials(code, redirect_uri, g.resource_arm)
+    print("Global Creds: " + str(global_credentials))
 
     # Return user to their appropriate landing page
     return redirect(url_for(user_type)) 
@@ -68,14 +73,14 @@ def customer():
 # Customer Subscription Page. Shows the user their Azure Subscriptions
 @app.route('/customer/subscriptions')
 def customer_subscriptions():
-    subscriptions = get_subscriptions(session['access_token_arm'])
-    return render_template('subscriptions.html', subscriptions=subscriptions['value'])
+    subscriptions = get_subscriptions_lib(global_credentials)
+    return render_template('subscriptions.html', subscriptions=subscriptions)
 
 # Customer Activity Log Page. Shows the user the Azure Health Activity Log for the subscription they picked.
 @app.route('/customer/subscriptions/<string:subscription_id>/activityLog')
 def customer_activityLog(subscription_id):
-    activity_log = get_activity_log(session['access_token_arm'],subscription_id)
-    return render_template('activityLog.html', activity_log=activity_log['value'], subscription_id=subscription_id)
+    activity_log = get_activity_log_lib(global_credentials,subscription_id)
+    return render_template('activityLog.html', activity_log=activity_log, subscription_id=subscription_id)
 
 # Grant Access Page. Allows the user to grant the application access to read their subscription even when the user is not currently logged in.
 @app.route('/customer/subscriptions/<string:subscription_id>/activityLog/grantAccess')
@@ -86,10 +91,10 @@ def grantAccess(subscription_id):
     username = get_user_details(session['access_token_graph'])
 
     # Try to add Service Principal to ARM Reader Role
-    result = add_service_principal_to_role(session['access_token_arm'],subscription_id,spoid)
+    result, success = add_service_principal_to_role_lib(global_credentials,subscription_id,spoid)
     
     # Add Subscription and Tenant information to DB if Success (201) or if Role Assigment Already Exists (409)
-    if result.status_code == 201 or result.status_code == 409:
+    if success or ('RoleAssignmentExists' in str(result)):
         db = TinyDB('.\db.json')
         q = Query()
         db_row = {
@@ -107,7 +112,7 @@ def grantAccess(subscription_id):
     else:
         message = "Error adding Service Principal to ARM Reader Role. See error message below:"
 
-    return render_template('grantaccess.html', result=result.json(), message=message)
+    return render_template('grantaccess.html', result=result, message=message)
 
 ### End of Customer Pages
 
@@ -136,9 +141,13 @@ def partner_activityLog(subscription_id):
     q = Query()
     subscription = db.get(q.subscriptionId == subscription_id)
     # Get an App Only Token for the specific Tenant where the subscription lives.
-    session['access_token_app'] = get_access_token_app(g.resource_arm, subscription['tenantId'])
-    activity_log = get_activity_log(session['access_token_app'], subscription_id)
-    return render_template('partner_activityLog.html', activity_log=activity_log['value'], access_token=session['access_token_app'])
+    credential = get_app_credentials(g.resource_arm, subscription['tenantId'])
+    activity_log = get_activity_log_lib(credential, subscription_id)
+    return render_template('partner_activityLog.html', activity_log=activity_log)
+
+@app.errorhandler(Exception)
+def error_page(e):
+    return render_template('error_page.html', error=e)
 
 if __name__ == '__main__':
     app.run()

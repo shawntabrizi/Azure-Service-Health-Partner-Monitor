@@ -1,67 +1,45 @@
 # External Python Libraries Used:
-import requests
 import uuid
+from azure.mgmt.resource.subscriptions import SubscriptionClient
+from azure.monitor import MonitorClient
+from azure.mgmt.authorization import AuthorizationManagementClient
+from azure.mgmt.authorization.models import RoleAssignmentProperties
+import datetime
 
 # Our Python Functions:
-from authentication import create_headers
 import appconfig as g
 
-# Get a list of the Azure Subscriptions available to the User in the Tenant Context
-def get_subscriptions(access_token):
-    headers = create_headers(access_token)
+def get_subscriptions_lib(credentials):
+    subscriptions_client = SubscriptionClient(credentials)
+    subscriptions = subscriptions_client.subscriptions.list()
+    subscription_list = []
+    for subscription in subscriptions:
+        subscription_list.append(subscription)
 
-    params = {
-        'url': g.resource_arm,
-        'api_version': "2016-07-01"
-        }
+    return subscription_list
 
-    subscriptions_url = '%(url)s/subscriptions?api-version=%(api_version)s' %params
-    r = requests.get(subscriptions_url, headers=headers)
+def get_activity_log_lib(credentials, subscription_id):
+    monitor_client = MonitorClient(credentials, subscription_id)
+    month = datetime.date.today() - datetime.timedelta(30)
+    select = ",".join(["eventName", "eventDataId","status","eventTimestamp"])
+    filter = " and ".join(["eventTimestamp ge {}".format(month)])
+    logs = monitor_client.activity_logs.list(filter=filter, select=select)
+    log_list = []
+    for log in logs:
+        log_list.append(log)
 
-    #Return the full JSON response
-    return r.json()
+    return log_list
 
-# Get the Activity Log for a particular Azure Subscription
-def get_activity_log(access_token, subscription_id):
-    headers = create_headers(access_token)
+def add_service_principal_to_role_lib(credentials,subscription_id,spoid):
+    auth_client = AuthorizationManagementClient(credentials,subscription_id)
+    scope = '/subscriptions/' + subscription_id
+    role_definition_id = '/subscriptions/' + subscription_id + '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7'
+    principal_id = spoid
+    try:
+        result = auth_client.role_assignments.create(scope, uuid.uuid4(), RoleAssignmentProperties(role_definition_id,principal_id))
+        success = True
+    except Exception as e:
+        result = e
+        success = False
 
-    #Adjust these paramters to change your query
-    params = {
-        'url': g.resource_arm,
-        'subscription_id': subscription_id,
-        'api_version': "2015-04-01",
-        'filter': "eventTimestamp ge '2017-6-1T00:00:37Z'",
-        'select': 'eventName,eventDataId,status'
-        }
-
-    activity_log_url = '%(url)s/subscriptions/%(subscription_id)s/providers/microsoft.insights/eventtypes/management/values?api-version=%(api_version)s&$filter=%(filter)s&$select=%(select)s' %params
-    r = requests.get(activity_log_url, headers=headers)
-
-    # Return the full JSON response
-    return r.json()
-
-# Add this application's service principal to the ARM Reader Role
-def add_service_principal_to_role(access_token, subscription_id, spoid):
-    headers = create_headers(access_token)
-
-    # Note the ARM Reader role is hardcoded here
-    params = {
-        'url': g.resource_arm,
-        'subscription_id': subscription_id,
-        'api_version': "2016-07-01",
-        'role_assignment_name': uuid.uuid4(),
-        'reader_role': 'acdd72a7-3385-48ef-bd42-f606fba81ae7'
-        }
-
-    data = {
-        'properties': {
-            'roleDefinitionId': "/subscriptions/%(subscription_id)s/providers/Microsoft.Authorization/roleDefinitions/%(reader_role)s" %params,
-            'principalId': spoid
-            }
-        }
-
-    create_role_assignments_url = '%(url)s/subscriptions/%(subscription_id)s/providers/Microsoft.Authorization/roleAssignments/%(role_assignment_name)s?api-version=%(api_version)s' %params
-    r = requests.put(create_role_assignments_url, headers=headers, json=data)
-
-    #Return full request result so we can get the JSON and the Status Code
-    return r
+    return result, success

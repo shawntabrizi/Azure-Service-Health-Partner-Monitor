@@ -13,7 +13,7 @@
     <br />
     <h3>Activity Log</h3>
     {% for log in activity_log %}
-    <p>{{log.eventName['localizedValue']}} : {{log.eventDataId}} - {{log.status['localizedValue']}}</p>
+    <p>{{log.event_name.localized_value}} : {{log.event_data_id}} - {{log.status.localized_value}} [{{log.event_timestamp}}]</p>
     {% endfor %}
 </body>
 </html>
