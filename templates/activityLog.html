@@ -12,8 +12,18 @@
     </form>
     <br />
     <h3>Activity Log</h3>
-    {% for log in activity_log %}
-    <p>{{log.event_name.localized_value}} : {{log.event_data_id}} - {{log.status.localized_value}} [{{log.event_timestamp}}]</p>
-    {% endfor %}
+    <ul>
+        {% for operation_id in activity_log_grouped %}
+        <li>
+            Operation Id: {{operation_id}}
+            <ul>
+                {% for log in activity_log_grouped[operation_id] %}
+                <li>{{log.event_name.localized_value}} : {{log.event_id}} - {{log.status.localized_value}} [{{log.event_timestamp}}]</li>
+                {% endfor %}
+            </ul>
+            <br />
+        </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

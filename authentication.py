@@ -14,9 +14,7 @@ def create_headers(access_token):
         'Content-Type': 'application/json'
         }
 
-### Start of Authorization Code Grant Flow Authentication
-# Note for the Authorization Code Grant Flow, we use the 'common' endpoint by default, rather than specifying a tenant.
-
+# Note that when a tenant is not specified, we use the 'common' endpoint
 # Generate AAD Login URL
 def login_url(state, redirect_uri, tenant_id='common'):
     params = {
@@ -35,53 +33,18 @@ def login_url(state, redirect_uri, tenant_id='common'):
 
 # Get Access Token using Authorization Code
 def get_access_token_code(code, redirect_uri, resource, tenant_id='common'):
-    payload = {
-        'client_id': g.clientId,
-        'code': code,
-        'grant_type': 'authorization_code',
-        'redirect_uri': redirect_uri,
-        'resource': resource,
-        'client_secret': g.clientSecret
-    }
+    context = adal.AuthenticationContext(g.aad_endpoint + tenant_id)
+    return context.acquire_token_with_authorization_code(code, redirect_uri, resource, g.clientId, g.clientSecret)['accessToken']
 
-    token_endpoint = g.aad_endpoint + tenant_id + '/oauth2/token'
-    r = requests.post(token_endpoint, data=payload)
-    print(r.json())
-    # Return raw Access Token
-    return r.json()['access_token']
-
-### End of Authorization Code Grant Flow Authentication
-
-### Start of Client Credential Flow Authentication
-# Note that we need to specify Tenant ID for these App Only Tokens. If you use the 'common' endpoint, it will choose the tenant where the app is registered.
-def get_access_token_app(resource, tenant_id):
-    payload = {
-        'client_id': g.clientId,
-        'grant_type': 'client_credentials',
-        'resource': resource,
-        'client_secret': g.clientSecret
-        }
-
-    token_endpoint = g.aad_endpoint + tenant_id + '/oauth2/token'
-    r = requests.post(token_endpoint, data=payload)
-
-    # Return raw Access Token
-    return r.json()['access_token']
-
+# Special Credentials are used for the ARM Python SDK
+# User Credential Object
 def get_user_credentials(code, redirect_uri, resource, tenant_id='common'):
     context = adal.AuthenticationContext(g.aad_endpoint + tenant_id)
     credentials = AdalAuthentication(context.acquire_token_with_authorization_code, code, redirect_uri, resource, g.clientId, g.clientSecret)
     return credentials
 
+# App Credential Object
 def get_app_credentials(resource, tenant_id='common'):
     context = adal.AuthenticationContext(g.aad_endpoint + tenant_id)
     credentials = AdalAuthentication(context.acquire_token_with_client_credentials, resource, g.clientId, g.clientSecret)
     return credentials
-
-def get_access_token_code_lib(code, redirect_uri, resource, tenant_id='common'):
-    context = adal.AuthenticationContext(g.aad_endpoint + tenant_id)
-    return context.acquire_token_with_authorization_code(code, 
-            redirect_uri, 
-            resource, 
-            g.clientId, 
-            g.clientSecret)

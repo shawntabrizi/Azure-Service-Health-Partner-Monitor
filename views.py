@@ -12,7 +12,7 @@ from authentication import *
 global_credentials = None
 
 app = Flask(__name__)
-#app.debug = True
+app.debug = True
 app.secret_key = g.flaskSecret
 
 # Home Page, with different Login Buttons for Customer or Partner
@@ -24,7 +24,7 @@ def index():
 @app.route('/<string:user_type>/login', methods = ['POST', 'GET'])
 def login(user_type):
     # Check if there is already a token in the session
-    if ('access_token_arm' in session) and ('access_token_graph' in session):
+    if (global_credentials is not None) and ('access_token_graph' in session):
         return redirect(url_for(user_type))
 
     # Use State Parameter to help mitigate XSRF attacks
@@ -53,7 +53,6 @@ def authorized(user_type):
         raise Exception('State has been messed with, end authentication')
     
     redirect_uri = url_for('authorized', user_type=user_type, _external=True)
-    session['access_token_arm'] = get_access_token_code(code, redirect_uri, g.resource_arm)
     session['access_token_graph'] = get_access_token_code(code, redirect_uri, g.resource_graph)
     global global_credentials
     global_credentials = get_user_credentials(code, redirect_uri, g.resource_arm)
@@ -66,21 +65,20 @@ def authorized(user_type):
 # Customer Landing Page. Shows the user their raw access tokens
 @app.route('/customer')
 def customer():
-    token_arm = session['access_token_arm']
     token_graph = session['access_token_graph']
-    return render_template('customer.html', token_arm=str(token_arm), token_graph=str(token_graph))
+    return render_template('customer.html', credential_arm=str(global_credentials), token_graph=str(token_graph))
 
 # Customer Subscription Page. Shows the user their Azure Subscriptions
 @app.route('/customer/subscriptions')
 def customer_subscriptions():
-    subscriptions = get_subscriptions_lib(global_credentials)
+    subscriptions = get_subscriptions(global_credentials)
     return render_template('subscriptions.html', subscriptions=subscriptions)
 
 # Customer Activity Log Page. Shows the user the Azure Health Activity Log for the subscription they picked.
 @app.route('/customer/subscriptions/<string:subscription_id>/activityLog')
 def customer_activityLog(subscription_id):
-    activity_log = get_activity_log_lib(global_credentials,subscription_id)
-    return render_template('activityLog.html', activity_log=activity_log, subscription_id=subscription_id)
+    activity_log_grouped = get_activity_log(global_credentials,subscription_id)
+    return render_template('activityLog.html', activity_log_grouped=activity_log_grouped, subscription_id=subscription_id)
 
 # Grant Access Page. Allows the user to grant the application access to read their subscription even when the user is not currently logged in.
 @app.route('/customer/subscriptions/<string:subscription_id>/activityLog/grantAccess')
@@ -91,7 +89,7 @@ def grantAccess(subscription_id):
     username = get_user_details(session['access_token_graph'])
 
     # Try to add Service Principal to ARM Reader Role
-    result, success = add_service_principal_to_role_lib(global_credentials,subscription_id,spoid)
+    result, success = add_service_principal_to_role(global_credentials,subscription_id,spoid)
     
     # Add Subscription and Tenant information to DB if Success (201) or if Role Assigment Already Exists (409)
     if success or ('RoleAssignmentExists' in str(result)):
@@ -120,12 +118,11 @@ def grantAccess(subscription_id):
 # These pages could be modified to check that only "Partners" have access.
 # Add a AAD Graph API query to check "Tenant ID" or "Username" to see if it matches what you expect.
 
-# Partner Landing Page. Shows the user their raw access tokens
+# Not Used by Default: Partner Landing Page. Shows the user their raw access tokens
 @app.route('/partner')
 def partner():
-    token_arm = session['access_token_arm']
     token_graph = session['access_token_graph']
-    return render_template('partner.html', token_arm=str(token_arm), token_graph=str(token_graph))
+    return render_template('partner.html', credential_arm=str(credential_arm), token_graph=str(token_graph))
 
 # List Customer Subscriptions Page. This page shows the partner all the customers that have granted access to their subscription.
 @app.route('/partner/subscriptions')
@@ -142,9 +139,10 @@ def partner_activityLog(subscription_id):
     subscription = db.get(q.subscriptionId == subscription_id)
     # Get an App Only Token for the specific Tenant where the subscription lives.
     credential = get_app_credentials(g.resource_arm, subscription['tenantId'])
-    activity_log = get_activity_log_lib(credential, subscription_id)
-    return render_template('partner_activityLog.html', activity_log=activity_log)
+    activity_log_grouped = get_activity_log(credential, subscription_id)
+    return render_template('partner_activityLog.html', activity_log_grouped=activity_log_grouped)
 
+#Trying to catch any errors. Most likely a sign in issue...
 @app.errorhandler(Exception)
 def error_page(e):
     return render_template('error_page.html', error=e)
