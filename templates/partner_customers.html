@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>Customers</title>
+</head>
+<body>
+    <h1>Your Customers</h1>
+    <br />
+    <form action="{{url_for('index')}}" method="GET">
+        <p><input type="submit" value="Back to Index" style="width:400px" /></p>
+    </form>
+    <br />
+    <h3>Pick a Subscription to View Health Log</h3>
+    {% for customer in customers %}
+    <p>{{customer.username}} ( {{customer.tenantDisplayName}} ) : <a href="{{url_for('partner_healthLog', subscription_id=customer.subscriptionId)}}">{{customer.subscriptionId}}</a></p>
+    {% endfor %}
+
+</body>
+</html>

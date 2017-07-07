@@ -56,7 +56,6 @@ def authorized(user_type):
     session['access_token_graph'] = get_access_token_code(code, redirect_uri, g.resource_graph)
     global global_credentials
     global_credentials = get_user_credentials(code, redirect_uri, g.resource_arm)
-    print("Global Creds: " + str(global_credentials))
 
     # Return user to their appropriate landing page
     return redirect(url_for(user_type)) 
@@ -74,14 +73,14 @@ def customer_subscriptions():
     subscriptions = get_subscriptions(global_credentials)
     return render_template('subscriptions.html', subscriptions=subscriptions)
 
-# Customer Activity Log Page. Shows the user the Azure Health Activity Log for the subscription they picked.
-@app.route('/customer/subscriptions/<string:subscription_id>/activityLog')
-def customer_activityLog(subscription_id):
-    activity_log_grouped = get_activity_log(global_credentials,subscription_id)
-    return render_template('activityLog.html', activity_log_grouped=activity_log_grouped, subscription_id=subscription_id)
+# Customer Health Service Log Page. Shows the user the Azure Health Health Service Log for the subscription they picked.
+@app.route('/customer/subscriptions/<string:subscription_id>/healthLog')
+def customer_healthLog(subscription_id):
+    health_log_grouped = get_health_log(global_credentials,subscription_id)
+    return render_template('healthLog.html', health_log_grouped=health_log_grouped, subscription_id=subscription_id, user_type='customer')
 
 # Grant Access Page. Allows the user to grant the application access to read their subscription even when the user is not currently logged in.
-@app.route('/customer/subscriptions/<string:subscription_id>/activityLog/grantAccess')
+@app.route('/customer/subscriptions/<string:subscription_id>/healthLog/grantAccess')
 def grantAccess(subscription_id):
     # Use the AAD Graph API to get: Service Principal Object Id, Tenant Display Name, Tenant Id, and Username of the signed in user.
     spoid = get_service_principal_object_id(session['access_token_graph'])
@@ -91,7 +90,7 @@ def grantAccess(subscription_id):
     # Try to add Service Principal to ARM Reader Role
     result, success = add_service_principal_to_role(global_credentials,subscription_id,spoid)
     
-    # Add Subscription and Tenant information to DB if Success (201) or if Role Assigment Already Exists (409)
+    # Add Subscription and Tenant information to DB if Success or if Role Assigment Already Exists
     if success or ('RoleAssignmentExists' in str(result)):
         db = TinyDB('.\db.json')
         q = Query()
@@ -116,31 +115,28 @@ def grantAccess(subscription_id):
 
 ### Start of Partner Pages
 # These pages could be modified to check that only "Partners" have access.
+# Add Sign In for Partner User
 # Add a AAD Graph API query to check "Tenant ID" or "Username" to see if it matches what you expect.
 
-# Not Used by Default: Partner Landing Page. Shows the user their raw access tokens
-@app.route('/partner')
-def partner():
-    token_graph = session['access_token_graph']
-    return render_template('partner.html', credential_arm=str(credential_arm), token_graph=str(token_graph))
-
 # List Customer Subscriptions Page. This page shows the partner all the customers that have granted access to their subscription.
-@app.route('/partner/subscriptions')
-def partner_subscriptions():
+@app.route('/partner/customers')
+def partner_customers():
     db = TinyDB('.\db.json')
-    subscriptions = db.all()
-    return render_template('partner_subscriptions.html', subscriptions=subscriptions)
+    customers = db.all()
+    return render_template('partner_customers.html', customers=customers)
 
-# Activity Log Page. This page shows the partner the activity log of the subscription, using an App Only Token.
-@app.route('/partner/<string:subscription_id>/activityLog')
-def partner_activityLog(subscription_id):
+# Health Service Log Page. This page shows the partner the health service logs for the subscription, using an App Only Token.
+@app.route('/partner/customers/<string:subscription_id>/healthLog')
+def partner_healthLog(subscription_id):
     db = TinyDB('.\db.json')
     q = Query()
     subscription = db.get(q.subscriptionId == subscription_id)
     # Get an App Only Token for the specific Tenant where the subscription lives.
     credential = get_app_credentials(g.resource_arm, subscription['tenantId'])
-    activity_log_grouped = get_activity_log(credential, subscription_id)
-    return render_template('partner_activityLog.html', activity_log_grouped=activity_log_grouped)
+    health_log_grouped = get_health_log(credential, subscription_id)
+    return render_template('healthLog.html', health_log_grouped=health_log_grouped, subscription_id=subscription_id, user_type='partner')
+
+### End of Partner Pages
 
 #Trying to catch any errors. Most likely a sign in issue...
 @app.errorhandler(Exception)
@@ -149,3 +145,4 @@ def error_page(e):
 
 if __name__ == '__main__':
     app.run()
+

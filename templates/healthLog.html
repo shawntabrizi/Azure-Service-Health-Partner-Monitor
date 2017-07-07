@@ -1,23 +1,30 @@
 <html>
 <head>
-    <title>Customer Subscription Activity Logs</title>
+    <title>Health Service Logs</title>
 </head>
 <body>
-    <h1>Customer Subscription Activity Logs</h1>
+    <h1>Health Service Logs for {{ subscription_id }}</h1>
+    {% if user_type == 'customer' %}
     <form action="{{url_for('customer_subscriptions')}}" method="GET">
         <p><input type="submit" value="Back to Subscriptions" style="width:400px" /></p>
     </form>
     <form action="{{url_for('grantAccess', subscription_id=subscription_id)}}" method="GET">
         <p><input type="submit" value="Grant Access to Partner" style="width:400px" /></p>
     </form>
+    {% endif %}
+    {% if user_type == 'partner' %}
+    <form action="{{url_for('partner_customers')}}" method="GET">
+        <p><input type="submit" value="Back to Customer List" style="width:400px" /></p>
+    </form>
+    {% endif %}
     <br />
-    <h3>Activity Log</h3>
+    <h3>Health Service Log</h3>
     <ul>
-        {% for operation_id in activity_log_grouped %}
+        {% for incident_id in health_log_grouped %}
         <li>
-            Operation Id: {{operation_id}}
+            Incident Id: {{incident_id}}
             <ul>
-                {% for log in activity_log_grouped[operation_id] %}
+                {% for log in health_log_grouped[incident_id] %}
                 <li>{{log.event_name.localized_value}} : {{log.event_id}} - {{log.status.localized_value}} [{{log.event_timestamp}}]</li>
                 {% endfor %}
             </ul>

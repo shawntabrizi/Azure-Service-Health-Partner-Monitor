@@ -20,21 +20,22 @@ def get_subscriptions(credentials):
 
     return subscription_list
 
-# Using a Monitor Client and ARM Credentials, get the Activity Log of a particular Azure Subscription.
-def get_activity_log(credentials, subscription_id):
+# Using a Monitor Client and ARM Credentials, get the Health Service Logs of a particular Azure Subscription.
+def get_health_log(credentials, subscription_id):
     monitor_client = MonitorClient(credentials, subscription_id)
-    # Note we query the Activity Log for the past 30 days.
-    month = datetime.date.today() - datetime.timedelta(30)
+    # Note we query the Health Service Log for the past 60 days.
+    date = datetime.date.today() - datetime.timedelta(60)
     # Get more properties back by adjusting this.
-    #select = ",".join(["eventName", "eventDataId", "status", "eventTimestamp", "operationId"])
+    # select = ",".join(["eventName", "eventDataId", "status", "eventTimestamp", "properties"])
+    # None returns all properties
     select = None
-    # Get different results by updating your filter.
-    filter = " and ".join(["eventTimestamp ge {}".format(month)])
+    # Get different results by updating your filter. Here we only get the Health Service Logs
+    filter = " and ".join(["eventTimestamp ge {}".format(date), "category eq 'ServiceHealth'"])
     logs = monitor_client.activity_logs.list(filter=filter, select=select)
-    # Group log by Operation Id
+    # Group log by Incident Id
     log_list_grouped = defaultdict(list)
     for log in logs:
-        log_list_grouped[log.operation_id].append(log)
+        log_list_grouped[log.properties['IncidentId']].append(log)
 
     return log_list_grouped
 

@@ -5,11 +5,10 @@
 <body>
     <h1>Click below to sign in...</h1>
     <br />
-    <form action="http://localhost:5000/customer/login" method="POST">
+    <form action="{{url_for('login', user_type='customer')}}" method="POST">
         <p><input type="submit" value="Customer Login" style="width:400px" /></p>
     </form>
-    <!-- if you want the partner to login to check their credentials, have this button point to /partner/login with method="POST"-->
-    <form action="http://localhost:5000/partner/subscriptions" method="GET">
+    <form action="{{url_for('partner_customers')}}" method="GET">
         <p><input type="submit" value="Partner Access" style="width:400px" /></p>
     </form>
 </body>
