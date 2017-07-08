@@ -1,4 +1,7 @@
 # Azure-Health-Partner-Monitor
+Azure Service Health provides guidance and support when issues in Azure services affect you. It provides timely and personalized information about the impact of service issues and helps you prepare for upcoming planned maintenance.  Azure customers review service health events in their personalized service health dashboard in Azure portal. There, they can receive alerts and updates via emails, text messages, and webhook notifications.  However, if you are an Azure partner who helps many customers manage their Azure cloud, it can be challenging to review Service Health data for your customers in a centralized place.  This Python Flask code sample will demonstrate how you can request access to, and query Service Health events from multiple Azure subscriptions, belonging to multiple Azure customers, and review them in a single place.
+
+# Overview
 Unless you are registered as a user in the tenant where the Azure Subscription lives, you will not be able to access Health Logs for an Azure Subscription using your user credentials. For partner and customers this may be an unreasonable requirement, so instead, we will use an Application Identity to access the logs in the customer’s subscription on behalf of the partner. To enable this, the follow steps need to take place:
 
   1.	An Azure AD Application needs to be registered in the Partner tenant.
