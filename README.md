@@ -14,18 +14,18 @@ Unless you are registered as a user in the tenant where the Azure Subscription l
 1.	Go to the Azure Portal (https://portal.azure.com)
 2.	Navigate to the “App Registration” blade
 3.	Create a New Application Registration
-  a.	Name = “Azure Health Monitor”
-  b.	Application Type = “Web app / API”
-  c.	Sign-on URL = “http://localhost:5000/customer/login/authorized”
+    1.	Name = “Azure Health Monitor”
+    2.	Application Type = “Web app / API”
+    3.	Sign-on URL = “http://localhost:5000/customer/login/authorized”
 4.	Make the application Multi-Tenant
-  a.	Properties > Multi-Tenanted > Yes
+    1.	Properties > Multi-Tenanted > Yes
 5.	Update your “Required permissions” to enable access to ARM
-  a.	Required Permissions > Add > Select an API > Windows Azure Service Management API
-  b.	Select “Access Azure Service Management as organization users (preview)” in Delegated Permissions
+    1.	Required Permissions > Add > Select an API > Windows Azure Service Management API
+    2.	Select “Access Azure Service Management as organization users (preview)” in Delegated Permissions
 6.	Create a New Application Key
-  a.	Keys > Description > “app_key”
-  b.	Keys > Duration > (choose an expiry time)
-  c.	Copy the value for your application key
+    1.	Keys > Description > “app_key”
+    2.	Keys > Duration > (choose an expiry time)
+    3.	Copy the value for your application key
  
 # Set Up the Python Flask Sample
 After you have completed your app registration, you should have 2 pieces:
