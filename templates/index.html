@@ -1,15 +1,22 @@
 <html>
 <head>
-    <title>Sign In</title>
+    <title>Azure Service Health Partner Monitor</title>
 </head>
 <body>
-    <h1>Click below to sign in...</h1>
+    <h1>Azure Service Health Partner Monitor</h1>
+    <div>
+        <h2>Customer Portal</h2>
+        <form action="{{url_for('login', user_type='customer')}}" method="POST">
+            <p>Please input your Azure Subscription Id:</p>
+            <p><input type="text" name="subscriptionId" size="36" /> <input type="submit" value="Customer Login" style="width:150px" /></p>
+        </form>
+    </div>
     <br />
-    <form action="{{url_for('login', user_type='customer')}}" method="POST">
-        <p><input type="submit" value="Customer Login" style="width:400px" /></p>
-    </form>
-    <form action="{{url_for('partner_customers')}}" method="GET">
-        <p><input type="submit" value="Partner Access" style="width:400px" /></p>
-    </form>
+    <div>
+        <h2>Partner Portal</h2>
+        <form action="{{url_for('partner_customers')}}" method="GET">
+            <p><input type="submit" value="Partner Access" style="width:440px" /></p>
+        </form>
+    </div>
 </body>
 </html>

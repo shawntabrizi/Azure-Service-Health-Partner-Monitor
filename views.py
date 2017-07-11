@@ -23,6 +23,12 @@ def index():
 # Login Page for both Customer and Partner
 @app.route('/<string:user_type>/login', methods = ['POST', 'GET'])
 def login(user_type):
+    # If user specifies a tenant id, use that instead of common
+    subscription_id = request.form['subscriptionId']
+    tenant_id = get_tenant_id(subscription_id)
+    session['tenant_id'] = tenant_id
+    session['subscription_id'] = subscription_id
+
     # Check if there is already a token in the session
     if (global_credentials is not None) and ('access_token_graph' in session):
         return redirect(url_for(user_type))
@@ -32,7 +38,7 @@ def login(user_type):
     session['state'] = guid
 
     # Need to send the full Redirect URI, so we use _external to add root domain
-    redirect_uri = login_url(session['state'], url_for('authorized', user_type=user_type, _external=True))
+    redirect_uri = login_url(session['state'], url_for('authorized', user_type=user_type, _external=True), tenant_id=tenant_id)
 
     return redirect(redirect_uri, code=301)
 
@@ -53,19 +59,25 @@ def authorized(user_type):
         raise Exception('State has been messed with, end authentication')
     
     redirect_uri = url_for('authorized', user_type=user_type, _external=True)
-    session['access_token_graph'] = get_access_token_code(code, redirect_uri, g.resource_graph)
+
     global global_credentials
     global_credentials = get_user_credentials(code, redirect_uri, g.resource_arm)
+    session['access_token_graph'] = get_access_token_code(code, redirect_uri, g.resource_graph)
+    session['access_token_arm'] = global_credentials.signed_session().headers['Authorization'].replace("Bearer ","")
 
     # Return user to their appropriate landing page
-    return redirect(url_for(user_type)) 
+    print(session['tenant_id'])
+    if (session['tenant_id'] != 'common') and (session['subscription_id']):
+        return redirect(url_for('customer_healthLog', subscription_id=session['subscription_id']))
+    else:
+        return redirect(url_for(user_type))
+
 
 ### Start of Customer Pages
 # Customer Landing Page. Shows the user their raw access tokens
 @app.route('/customer')
 def customer():
-    token_graph = session['access_token_graph']
-    return render_template('customer.html', credential_arm=str(global_credentials), token_graph=str(token_graph))
+    return render_template('customer.html', credential_arm=str(session['access_token_arm']), token_graph=str(session['access_token_graph']))
 
 # Customer Subscription Page. Shows the user their Azure Subscriptions
 @app.route('/customer/subscriptions')
