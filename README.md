@@ -28,7 +28,7 @@ Unless you are registered as a user in the tenant where the Azure Subscription l
     3.	Copy the value for your application key
 
 # Set Up Python Environment
-You need to install the following Python Libraries in order to get your applicatio to run:
+You need to install the following Python Libraries in order to get your application to run:
 1.	pip install adal
 2.	pip install azure-batch
 3.  pip install azure-mgmt-scheduler
