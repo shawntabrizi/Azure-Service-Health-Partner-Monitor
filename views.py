@@ -88,12 +88,14 @@ def customer_subscriptions():
 # Customer Health Service Log Page. Shows the user the Azure Health Health Service Log for the subscription they picked.
 @app.route('/customer/subscriptions/<string:subscription_id>/healthLog')
 def customer_healthLog(subscription_id):
+    subscription_id = str(subscription_id)
     health_log_grouped = get_health_log(global_credentials,subscription_id)
     return render_template('healthLog.html', health_log_grouped=health_log_grouped, subscription_id=subscription_id, user_type='customer')
 
 # Grant Access Page. Allows the user to grant the application access to read their subscription even when the user is not currently logged in.
 @app.route('/customer/subscriptions/<string:subscription_id>/healthLog/grantAccess')
 def grantAccess(subscription_id):
+    subscription_id = str(subscription_id)
     # Use the AAD Graph API to get: Service Principal Object Id, Tenant Display Name, Tenant Id, and Username of the signed in user.
     spoid = get_service_principal_object_id(session['access_token_graph'])
     tenant_displayname, tenant_id = get_tenant_details(session['access_token_graph'])
@@ -140,6 +142,7 @@ def partner_customers():
 # Health Service Log Page. This page shows the partner the health service logs for the subscription, using an App Only Token.
 @app.route('/partner/customers/<string:subscription_id>/healthLog')
 def partner_healthLog(subscription_id):
+    subscription_id = str(subscription_id)
     db = TinyDB('.\db.json')
     q = Query()
     subscription = db.get(q.subscriptionId == subscription_id)
